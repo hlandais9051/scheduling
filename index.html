@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Planning Transport Mensuel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  </head>
+  <body>
+    <div id="notification-doublon"></div>
+    <datalist id="list-associe"></datalist>
+    <datalist id="list-vehicule"></datalist>
+    <datalist id="list-client"></datalist>
+    <datalist id="list-chauffeur"></datalist>
+    <datalist id="list-telephone"></datalist>
+
+    <div class="sticky-top-wrapper">
+      <div class="header-tools">
+        <div
+          class="button-group"
+          onmouseleave="
+            document.getElementById('sous-menu-add').style.display = 'none'
+          "
+        >
+          <button
+            onmouseenter="toggleMenu('sous-menu-add', event)"
+            class="btn"
+            style="
+              background-color: #ff0000;
+              color: rgb(0, 0, 0);
+              font-weight: bold;
+              font-size: 15px;
+            "
+          >
+            ➕ Lignes ▼
+          </button>
+          <div
+            id="sous-menu-add"
+            class="dropdown-content"
+            style="display: none"
+          >
+            <button
+              id="add-row"
+              class="btn btn-add"
+              style="width: 100%; margin-bottom: 5px"
+            >
+              Ajouter une ligne
+            </button>
+            <button id="reset-day" class="btn btn-reset" style="width: 100%">
+              Tout supprimer
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="button-group"
+          onmouseleave="
+            document.getElementById('sous-menu-copy').style.display = 'none'
+          "
+        >
+          <button
+            onmouseenter="toggleMenu('sous-menu-copy', event)"
+            class="btn"
+            style="
+              background-color: #ff0000;
+              color: rgb(0, 0, 0);
+              font-weight: bold;
+              font-size: 15px;
+            "
+          >
+            📋 Copier ▼
+          </button>
+          <div
+            id="sous-menu-copy"
+            class="dropdown-content"
+            style="display: none"
+          >
+            <button
+              id="copy-day"
+              class="btn btn-copy-day"
+              style="width: 100%; margin-bottom: 5px"
+            >
+              Copier journée
+            </button>
+            <button
+              id="paste-day"
+              class="btn btn-paste-day"
+              style="width: 100%"
+            >
+              Coller journée
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="button-group"
+          onmouseleave="
+            document.getElementById('sous-menu-photos').style.display = 'none'
+          "
+        >
+          <button
+            onmouseenter="toggleMenu('sous-menu-photos', event)"
+            class="btn"
+            style="
+              background-color: #ff0000;
+              color: rgb(0, 0, 0);
+              font-weight: bold;
+              font-size: 15px;
+            "
+          >
+            📤 Export ▼
+          </button>
+          <div
+            id="sous-menu-photos"
+            class="dropdown-content"
+            style="display: none"
+          >
+            <button
+              id="copy-image"
+              class="btn btn-copy-img"
+              style="width: 100%; margin-bottom: 5px"
+            >
+              Copier Planning (N°Commande)
+            </button>
+            <button
+              id="copy-image-client"
+              class="btn"
+              style="background-color: #07cc00; width: 100%; margin-bottom: 5px"
+            >
+              Copier Planning (Supp. Client)
+            </button>
+            <button
+              id="export-excel"
+              class="btn btn-export"
+              style="width: 100%; margin-bottom: 5px"
+            >
+              Excel
+            </button>
+            <button
+              onclick="imprimerPlanning()"
+              class="btn"
+              style="background-color: #333; width: 100%"
+            >
+              🖨️ Imprimer
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="button-group"
+          onmouseleave="
+            document.getElementById('sous-menu-config').style.display = 'none'
+          "
+        >
+          <button
+            onmouseenter="toggleMenu('sous-menu-config', event)"
+            class="btn"
+            style="
+              background-color: #ff0000;
+              color: rgb(0, 0, 0);
+              font-weight: bold;
+              font-size: 15px;
+            "
+          >
+            ⚙️ Configs ▼
+          </button>
+          <div
+            id="sous-menu-config"
+            class="dropdown-content"
+            style="display: none"
+          >
+            <button
+              id="toggle-config-client"
+              class="btn btn-config-client"
+              style="width: 100%; margin-bottom: 5px"
+            >
+              Clients
+            </button>
+            <button
+              id="toggle-config-associe"
+              class="btn btn-config-associe"
+              style="width: 100%; margin-bottom: 5px"
+            >
+              Associés
+            </button>
+            <button
+              id="toggle-config-chauffeur"
+              class="btn btn-config-chauffeur"
+              style="width: 100%; margin-bottom: 5px"
+            >
+              Chauffeurs
+            </button>
+            <button
+              id="toggle-config-telephone"
+              class="btn btn-config-telephone"
+              style="width: 100%"
+            >
+              Téléphones
+            </button>
+          </div>
+        </div>
+
+        <span id="save-notif" class="save-notif"></span>
+        <span id="save-notif2" class="save-notif2"></span>
+      </div>
+
+      <div id="config-section-client">
+        <h2 style="margin-top: 20px; padding-top: 10px">
+          Configuration Clients
+        </h2>
+        <div
+          class="sticky-top-wrapper"
+          style="
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              flex-wrap: wrap;
+              flex: 1;
+            "
+          >
+            <strong>Nouveau Groupe :</strong><br />
+            <input type="text" id="new-group-name" placeholder="Nom..." />
+            <button onclick="addNewGroup()" class="btn btn-add">
+              Créer Groupe
+            </button>
+          </div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              flex-wrap: wrap;
+              flex: 1;
+            "
+          >
+            <strong>Nouveau Client :</strong><br />
+            <input type="text" id="new-client-name" placeholder="Nom..." />
+            <button onclick="addNewClient()" class="btn btn-add">
+              Créer Client
+            </button>
+          </div>
+          <div style="border-left: 2px solid #ccc; padding-left: 15px"></div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              flex-wrap: wrap;
+              flex: 1;
+            "
+          >
+            <strong>Nouvelle Catégorie :</strong><br />
+            <input
+              type="text"
+              id="global-categorie-client"
+              placeholder="Nom..."
+            />
+            <button
+              onclick="addCategorie('client')"
+              class="btn btn-config-client"
+            >
+              Ajouter partout
+            </button>
+          </div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              flex-wrap: wrap;
+              flex: 1;
+            "
+          >
+            <strong>Nouveau Matériel :</strong><br />
+            <input type="text" id="global-matos-client" placeholder="Nom..." />
+            <button
+              onclick="addGlobalMatos('client')"
+              class="btn btn-config-client"
+            >
+              Ajouter partout
+            </button>
+          </div>
+          <div>
+            <button
+              class="btn btn-reset"
+              style="float: right"
+              onclick="closeConfigs('config-section-client')"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+        <div id="config-container"></div>
+      </div>
+
+      <div id="config-section-associe">
+        <h2 style="margin-top: 20px; padding-top: 10px">
+          Configuration Associés - Affrétés
+        </h2>
+        <div
+          class="sticky-top-wrapper"
+          style="
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              flex-wrap: wrap;
+              flex: 1;
+            "
+          >
+            <strong>Nouvel Affrété :</strong><br />
+            <input type="text" id="new-config2-name" placeholder="Nom..." />
+            <button onclick="addNewClient2()" class="btn btn-add">
+              Créer Affrété
+            </button>
+          </div>
+          <div style="border-left: 2px solid #ccc; padding-left: 15px"></div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              flex-wrap: wrap;
+              flex: 1;
+            "
+          >
+            <strong>Nouvelle Catégorie :</strong><br />
+            <input
+              type="text"
+              id="global-categorie-associe"
+              placeholder="Nom..."
+            />
+            <button
+              onclick="addCategorie('associe')"
+              class="btn btn-config-client"
+            >
+              Ajouter partout
+            </button>
+          </div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              flex-wrap: wrap;
+              flex: 1;
+            "
+          >
+            <strong>Nouveau Matériel :</strong><br />
+            <input type="text" id="global-matos-associe" placeholder="Nom..." />
+            <button
+              onclick="addGlobalMatos('associe')"
+              class="btn btn-config-associe"
+            >
+              Ajouter partout
+            </button>
+          </div>
+          <div>
+            <button
+              class="btn btn-reset"
+              style="float: right"
+              onclick="closeConfigs('config-section-associe')"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+        <div id="config-container-2"></div>
+      </div>
+
+      <div id="config-section-chauffeur">
+        <h2 style="margin-top: 20px; padding-top: 10px">
+          Configuration Chauffeurs
+        </h2>
+        <div
+          class="sticky-top-wrapper"
+          style="
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              flex-wrap: wrap;
+              flex: 1;
+            "
+          >
+            <strong>Nouveau chauffeur :</strong><br />
+            <input
+              type="text"
+              id="new-config-chauffeur-name"
+              placeholder="Nom..."
+            />
+            <button onclick="addNewChauffeur()" class="btn btn-add">
+              Créer Chauffeur
+            </button>
+          </div>
+          <div>
+            <button
+              class="btn btn-reset"
+              style="float: right"
+              onclick="closeConfigs('config-section-chauffeur')"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+        <div id="config-container-chauffeur"></div>
+      </div>
+
+      <div id="config-section-telephone">
+        <h2 style="margin-top: 20px; padding-top: 10px">
+          Configuration Téléphones Clients
+        </h2>
+        <div
+          class="sticky-top-wrapper"
+          style="
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              flex-wrap: wrap;
+              flex: 1;
+            "
+          >
+            <strong>Nouveau contact :</strong><br />
+            <input
+              type="text"
+              id="new-config-telephone-client"
+              placeholder="Nom Client..."
+            />
+            <input
+              type="text"
+              id="new-config-telephone-name"
+              placeholder="Nom Contact..."
+            />
+            <input
+              type="text"
+              id="new-config-telephone-number"
+              placeholder="06 00 00..."
+            />
+            <button onclick="addNewTelephone()" class="btn btn-add">
+              Créer
+            </button>
+          </div>
+          <div>
+            <button
+              class="btn btn-reset"
+              style="float: right"
+              onclick="closeConfigs('config-section-telephone')"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+        <div id="config-container-telephone"></div>
+      </div>
+
+      <div
+        class="search-filters"
+        style="
+          margin-bottom: 15px;
+          background: #f8f9fa;
+          padding: 10px;
+          border-radius: 5px;
+          border: 1px solid #ddd;
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 10px;
+        "
+      >
+        <strong>Filtres :</strong>
+        <input
+          type="text"
+          id="filter-associe"
+          placeholder="Filtrer par Associé..."
+          oninput="filterTable()"
+          style="padding: 5px; border: 1px solid #ccc; border-radius: 4px"
+        />
+        <input
+          type="text"
+          id="filter-client"
+          placeholder="Filtrer par Client..."
+          oninput="filterTable()"
+          style="padding: 5px; border: 1px solid #ccc; border-radius: 4px"
+        />
+        <input
+          type="text"
+          id="filter-chantier"
+          placeholder="Filtrer par Chantier..."
+          oninput="filterTable()"
+          style="padding: 5px; border: 1px solid #ccc; border-radius: 4px"
+        />
+        <input
+          type="text"
+          id="filter-materiel"
+          placeholder="Filtrer par Matériel..."
+          oninput="filterTable()"
+          style="padding: 5px; border: 1px solid #ccc; border-radius: 4px"
+        />
+        <button
+          onclick="resetFilters()"
+          style="
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+          "
+        >
+          Réinitialiser
+        </button>
+        <div style="display: flex; align-items: center; gap: 6px">
+          <button
+            id="btn-undo"
+            onclick="undoPlanning()"
+            title="Annuler (Ctrl+Z)"
+            style="
+              background: #546e7a;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              padding: 5px 9px;
+              font-size: 18px;
+              cursor: pointer;
+              opacity: 0.35;
+              transition: opacity 0.2s;
+            "
+            disabled
+          >
+            ↩
+          </button>
+          <button
+            id="btn-redo"
+            onclick="redoPlanning()"
+            title="Rétablir (Ctrl+Y)"
+            style="
+              background: #546e7a;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              padding: 5px 9px;
+              font-size: 18px;
+              cursor: pointer;
+              opacity: 0.35;
+              transition: opacity 0.2s;
+            "
+            disabled
+          >
+            ↪
+          </button>
+        </div>
+        <div style="flex-grow: 1"></div>
+        <div
+          id="color-picker-tools"
+          class="hide-export"
+          style="
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: #fff;
+            padding: 5px 10px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+          "
+        >
+          <small style="color: #666; font-weight: bold; margin-right: 5px"
+            >MARQUER :</small
+          >
+          <div
+            onclick="setColorToSelectedRow('#ffffff')"
+            style="
+              width: 25px;
+              height: 25px;
+              background: #fff;
+              border: 1px solid #ccc;
+              cursor: pointer;
+              border-radius: 3px;
+            "
+            title="Effacer"
+          ></div>
+          <div
+            onclick="setColorToSelectedRow('#ffee00')"
+            style="
+              width: 25px;
+              height: 25px;
+              background: #ffee00;
+              cursor: pointer;
+              border-radius: 3px;
+            "
+            title="Prise de commande"
+          ></div>
+          <div
+            onclick="setColorToSelectedRow('#ffae00')"
+            style="
+              width: 25px;
+              height: 25px;
+              background: #ffae00;
+              cursor: pointer;
+              border-radius: 3px;
+            "
+            title="Réduction"
+          ></div>
+          <div
+            onclick="setColorToSelectedRow('#ff0000')"
+            style="
+              width: 25px;
+              height: 25px;
+              background: #ff0000;
+              cursor: pointer;
+              border-radius: 3px;
+            "
+            title="Intempéries"
+          ></div>
+          <div
+            onclick="setColorToSelectedRow('#b700ff')"
+            style="
+              width: 25px;
+              height: 25px;
+              background: #b700ff;
+              cursor: pointer;
+              border-radius: 3px;
+            "
+            title="Violet"
+          ></div>
+          <div
+            onclick="setColorToSelectedRow('#ff00d4')"
+            style="
+              width: 25px;
+              height: 25px;
+              background: #ff00d4;
+              cursor: pointer;
+              border-radius: 3px;
+            "
+            title="Rose"
+          ></div>
+          <button
+            onclick="resetAllColors()"
+            style="
+              padding: 5px 10px;
+              cursor: pointer;
+              border-radius: 4px;
+              border: 1px solid #ccc;
+            "
+          >
+            Effacer les marquages
+          </button>
+        </div>
+        <div>
+          Le :
+          <input
+            type="date"
+            id="current-date-picker"
+            onchange="updateAllAfterDateChange()"
+            style="padding: 3px; border-radius: 4px; border: 1px solid #ccc"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div id="capture-area">
+      <div
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          margin-bottom: 1vw;
+          flex-wrap: wrap;
+        "
+      >
+        <h2 id="display-date" style="margin: 0">Planning du ...</h2>
+      </div>
+      <div class="table-container">
+        <table id="my-table">
+          <thead>
+            <tr>
+              <th class="col-actions hide-export">Actions</th>
+              <th class="col-associe">Associé</th>
+              <th class="col-chantier">Chantier</th>
+              <th class="col-date">Date</th>
+              <th class="col-matos">Matériel</th>
+              <th class="col-client">Client</th>
+              <th class="col-telephone">Contact Client</th>
+              <th class="col-consigne">Consigne</th>
+              <th class="col-chauffeur">Chauffeur</th>
+              <th class="col-nchantier">N° Chantier</th>
+              <th class="col-ncommande">N° Commande</th>
+              <th class="col-nbon">N° Bon</th>
+              <th class="col-tarif hide-export">Tarif-client</th>
+              <th class="col-supplement-client hide-export">
+                Supplément-client
+              </th>
+              <th class="col-IC-client hide-export">IC-client</th>
+              <th class="col-tarif-affrete hide-export">Tarif-affrété</th>
+              <th class="col-supplement-affrete hide-export">
+                Supplément-affrété
+              </th>
+              <th class="col-IC-affrete hide-export">IC-affrété</th>
+              <th class="col-commentaire hide-export">Commentaire</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="totals-container" class="hide-export">
+      <table style="width: 100%; border-collapse: collapse; margin-top: 10px">
+        <tfoot>
+          <tr
+            style="
+              background: #f8f9fa;
+              font-weight: bold;
+              border: 1px solid #ccc;
+            "
+          >
+            <td style="padding: 10px">
+              <div
+                style="
+                  display: flex;
+                  flex-wrap: nowrap;
+                  justify-content: space-between;
+                  align-items: left;
+                  gap: 30px;
+                  width: 100%;
+                  overflow: hidden;
+                  font-size: clamp(0.4rem, 1vw, 0.7rem);
+                "
+              >
+                <div style="flex: 1; text-align: left; line-height: 1.4">
+                  <strong
+                    style="color: #007bff; font-size: 1.2em; display: block"
+                    >SECTION CLIENT</strong
+                  >
+                  <div style="white-space: nowrap; margin-top: 5px">
+                    TARIF :
+                    <span id="total-price" style="color: #007bff">0.00 €</span>
+                    SUPPLEMENT :
+                    <span
+                      id="total-price-supplement-client"
+                      style="color: #007bff"
+                      >0.00 €</span
+                    >
+                    IC :
+                    <span id="total-price-IC-client" style="color: #007bff"
+                      >0.00 €</span
+                    >
+                  </div>
+                  <div style="font-size: 1em">
+                    TOTAL GENERAL :
+                    <span id="total-marge-client" style="color: #007bff"
+                      >0.00 €</span
+                    >
+                  </div>
+                </div>
+                <div style="flex: 1; text-align: left; line-height: 1.4">
+                  <strong
+                    style="color: #dc3545; font-size: 1.2em; display: block"
+                    >SECTION AFFRÉTÉ</strong
+                  >
+                  <div style="white-space: nowrap; margin-top: 5px">
+                    TARIF :
+                    <span id="total-price-affrete" style="color: #dc3545"
+                      >0.00 €</span
+                    >
+                    SUPPLEMENT :
+                    <span
+                      id="total-price-supplement-affrete"
+                      style="color: #dc3545"
+                      >0.00 €</span
+                    >
+                    IC :
+                    <span id="total-price-IC-affrete" style="color: #dc3545"
+                      >0.00 €</span
+                    >
+                  </div>
+                  <div style="font-size: 1em">
+                    TOTAL GENERAL :
+                    <span id="total-marge-affrete" style="color: #dc3545"
+                      >0.00 €</span
+                    >
+                  </div>
+                </div>
+                <div style="flex: 1; text-align: left; line-height: 1.4">
+                  <strong
+                    style="color: #000000; font-size: 1.2em; display: block"
+                    >RÉSULTAT DU JOUR</strong
+                  >
+                  <div
+                    style="
+                      font-size: 1.1em;
+                      white-space: nowrap;
+                      margin-top: 5px;
+                    "
+                  >
+                    MARGE NETTE :
+                    <span id="marge-nette" style="color: #28a745">0.00 €</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div
+      id="help-modal"
+      style="
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        width: 90%;
+        max-width: 800px;
+        max-height: 85vh;
+        overflow-y: auto;
+      "
+    >
+      <h3 style="margin-top: 0">💡 Aide & Raccourcis</h3>
+      <ul style="margin-top: 0; padding-left: 20px">
+        <li style="margin-bottom: 2px">
+          <i>Cliquez dans les cases blanches pour saisir vos informations.</i>
+        </li>
+        <li style="margin-bottom: 2px">
+          <i>Sélectionnez la date dans le calendrier pour changer de jour.</i>
+        </li>
+        <li style="margin-bottom: 2px">
+          <i>Sélectionnez plusieurs cases pour copier leur contenu.</i>
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur le bouton
+            <span style="color: #28a745; font-weight: bold">VERT</span> pour
+            rajouter une ligne.</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur le bouton
+            <span style="color: #dc3545; font-weight: bold">ROUGE</span> pour
+            tout supprimer la journée.</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur le bouton
+            <span style="color: #ff00b7; font-weight: bold">ROSE</span> pour
+            copier la journée actuelle.</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur le bouton
+            <span style="color: #00d69a; font-weight: bold">TURQUOISE</span>
+            pour coller la journée copiée.</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur le bouton
+            <span style="color: #6610f2; font-weight: bold">BLEU</span> pour
+            copier le planning entier en image.</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur le bouton
+            <span style="color: #07cc00; font-weight: bold">VERT CLAIR</span>
+            pour copier le planning jusqu'à la colonne "Supplément-client".</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur le bouton
+            <span style="color: #ff9500; font-weight: bold">ORANGE</span> pour
+            exporter le planning du mois en fichier Excel.</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur le bouton
+            <span style="color: #6c757d; font-weight: bold">GRIS</span> pour
+            configurer les prix des clients.</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur le bouton
+            <span style="color: #17a2b8; font-weight: bold">BLEU CLAIR</span>
+            pour configurer les prix des associés.</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur le bouton
+            <span style="color: #9b1594; font-weight: bold">VIOLET</span> pour
+            configurer la liste des chauffeurs.</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Dans les Configs, K et C0 sont <strong>annuels</strong> (changent
+            une fois par an), CM-1 est <strong>mensuel</strong> (à mettre à jour
+            chaque mois).</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur les cases de filtres pour rechercher un associé ou un
+            client.</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i
+            >Appuyez sur la feuille à droite 📑 pour dupliquer une seule
+            ligne.</i
+          >
+        </li>
+        <li style="margin-bottom: 2px">
+          <i>Appuyez sur la croix à droite × pour supprimer une seule ligne.</i>
+        </li>
+      </ul>
+      <button
+        onclick="toggleHelp()"
+        style="
+          width: 100%;
+          padding: 10px;
+          cursor: pointer;
+          background: #eee;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+        "
+      >
+        Fermer
+      </button>
+    </div>
+
+    <div
+      id="help-overlay"
+      onclick="toggleHelp()"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      "
+    ></div>
+
+    <div class="admin-footer-actions">
+      <div class="footer-left-group">
+        <button onclick="resetTout()" class="btn-maintenance">
+          Don't touch me !
+        </button>
+        <button
+          onclick="reparerDonneesManuellement()"
+          class="btn-maintenance btn-repair"
+        >
+          🔧 Réparer les données
+        </button>
+        <button
+          onclick="sauvegarderConfigComplete()"
+          class="btn-maintenance btn-save"
+        >
+          💾 Sauvegarder Config
+        </button>
+        <button
+          onclick="document.getElementById('input-restaurer').click()"
+          class="btn-maintenance btn-restaur"
+        >
+          📂 Restaurer Config
+        </button>
+        <input
+          type="file"
+          id="input-restaurer"
+          style="display: none"
+          onchange="restaurerConfigComplete(this)"
+        />
+      </div>
+      <button
+        onclick="toggleHelp()"
+        class="btn-help-circle"
+        style="margin-left: 15px"
+        title="Aide et Astuces"
+      >
+        ?
+      </button>
+    </div>
+  </body>
+</html>
