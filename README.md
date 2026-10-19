@@ -72,7 +72,6 @@ Built with **plain HTML, CSS and JavaScript** (no framework, no build step).
 ## Notes
 
 - The public Supabase key is designed to be exposed in a browser, but it is only safe if Row Level Security is correctly configured.
-- Do not commit real customer data or exported files.
 
 ## Author
 
@@ -125,4 +124,3 @@ Développée en **HTML, CSS et JavaScript pur** (sans framework, sans étape de 
 ### Remarques
 
 - La clé publique Supabase est faite pour être visible dans un navigateur, mais elle n'est sûre que si la Row Level Security est bien configurée.
-- Ne publie jamais de vraies données clients ni de fichiers exportés.
